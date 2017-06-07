@@ -1,5 +1,4 @@
 import argparse
-import random
 
 class Operation():
     PLUS, MINUS, MULT, DIV = range(4)
@@ -22,17 +21,10 @@ class Operation():
 
     def to_str(op):
         return Operation._s[op]
-
-    def get_random_op(s):
-        ops = list(str(s))
-        return int(ops[int(random.random()*len(ops))])
         
 class PostfixTree:
     def __init__(self, op=None, left=None, right=None, leaf=None):
-        self.op = op
-        self.leaf = leaf
-        self.left = left
-        self.right = right
+        self.leaf, self.left, self.right, self.op = leaf, left, right, op
 
     def evaluate(self):
         if self.leaf != None:
@@ -50,34 +42,6 @@ class PostfixTree:
             return '[' + str(self.leaf) + ']'
         return '[' + Operation.to_str(self.op) + str(self.left) + str(self.right) + ']'
 
-#random trees - returns one tree per construction
-class RandomTree(PostfixTree):
-    def __init__(self, lb, ub, p, scale):
-        super().__init__()
-        lb, ub, p, scale = int(lb), int(ub), float(p), float(scale)
-
-        if random.random() < p:
-            #then this is leaf
-            self.leaf = random.randint(lb, ub)
-        else:
-            self.left = RandomTree(lb, ub, p*scale, scale)
-            self.right = RandomTree(lb, ub, p*scale, scale)
-            
-            self.op = Operation.PLUS
-
-class FullTree(PostfixTree):
-    def __init__(self, lb, ub, depth, ops):
-        super().__init__()
-        lb, ub, depth, ops = int(lb), int(ub), int(depth), str(ops)
-        
-        if depth == 0:
-            self.leaf = random.randint(lb, ub)
-        else:
-            self.left = FullTree(lb, ub, depth-1, ops)
-            self.right = FullTree(lb, ub, depth-1, ops)
-            self.op = Operation.get_random_op(ops)
-
-#generates a list of all trees
 def generateFullTrees(lb, ub, ops, depth):
     trees = []
     if depth <= 0:
@@ -85,7 +49,7 @@ def generateFullTrees(lb, ub, ops, depth):
             t = PostfixTree(leaf=i)
             trees.append(t)
     else:
-        subtrees = generate(lb, ub, ops, depth-1)
+        subtrees = generateFullTrees(lb, ub, ops, depth-1)
         for op in ops:
             for i in range(lb,ub):
                 for x in subtrees:
@@ -101,7 +65,7 @@ def generateAllTrees(lb, ub, ops, depth):
             t = PostfixTree(leaf=i)
             trees.append(t)
     else:
-        subtrees = generate(lb, ub, ops, depth-1)
+        subtrees = generateAllTrees(lb, ub, ops, depth-1)
         for op in ops:
             for i in range(lb,ub):
                 for x in subtrees:
@@ -120,37 +84,24 @@ if __name__ == '__main__':
     parser.add_argument('--p3', help='the third parameter for the tree generator')
     parser.add_argument('--p4', help='the fourth parameter for the tree generator')
     parser.add_argument('--p5', help='the fifth parameter for the tree generator')
-    parser.add_argument('--unique', help='if true, only unique examples will be in output', action='store_true')
     args = parser.parse_args()
 
-    if args.unique:
-        trees = set()
-    else:
-        trees = []
-
     #tree types
-    if args.tree_type == 'RandomTree':
-        tree = lambda : [ RandomTree(args.p1, args.p2, args.p3, args.p4, args.p5) ]
-    elif args.tree_type == 'FullTree':
-        tree = lambda : [ FullTree(args.p1, args.p2, args.p3, args.p4) ]
-    elif args.tree_type == 'AllTreesGen':
-        tree = lambda : generate(int(args.p1), int(args.p2), str(args.p3), int(args.p4))
+    if args.tree_type == 'generateFullTrees':
+        generator = lambda : generateFullTrees(int(args.p1), int(args.p2), str(args.p3), int(args.p4))
+    elif args.tree_type == 'generateAllTrees':
+        generator = lambda : generateAllTrees(int(args.p1), int(args.p2), str(args.p3), int(args.p4))
     else:
-        print('does not have the tree option specified')
+        print('error')
         exit()
 
-    #lambda function that returns the new type of tree
-    l = tree()
+    trees = []
+    #generators return lists not generators!!
+    trees.extend(generator())
+    trees = list(map(lambda x: (str(x), x.evaluate()), trees))
+    trees = trees[:num_ex] 
 
-    #add to trees
-    #TODO find some way to make this without an if statement
-    for n in l:
-        if args.unique:
-            trees.add((str(n), n.evaluate()))
-        else:
-            trees.append((str(n), n.evaluate()))
-
-    fn = '%s_n%d_t%s_p1%s_p2%s_p3%s_p4%s_p5%s_u%s' % (args.output, args.num_ex, args.tree_type, args.p1, args.p2, args.p3, args.p4, args.p5, args.unique)
+    fn = '%s_n%d_t%s_p1%s_p2%s_p3%s_p4%s_p5%s' % (args.output, len(trees), args.tree_type, args.p1, args.p2, args.p3, args.p4, args.p5)
     with open(fn, 'w') as handle:
         for expr, val in trees:
             handle.write('%s\t%d\n' % (expr, val))
