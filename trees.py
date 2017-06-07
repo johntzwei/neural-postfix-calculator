@@ -4,7 +4,28 @@ from enum import Enum
 
 class Operation(Enum):
     PLUS, MINUS, MULT, DIV, NEG = range(5)
+    f = [ 
+            lambda x, y: x + y,
+            lambda x, y: x - y,
+            lambda x, y: x * y,
+            lambda x, y: x / y,
+            lambda x, y: -1 * x
+        ]
 
+    s = [
+            '+',
+            '-',
+            '*',
+            '/',
+            '!'
+        ]
+
+    def evaluate(op, o1, o2):
+        return f[op](o1, o2)
+
+    def to_str(op):
+        return s[op]
+        
 class PostfixTree:
     def __init__(self, op=None, left=None, right=None, leaf=None):
         self.op = op
@@ -15,12 +36,8 @@ class PostfixTree:
     def evaluate(self):
         if self.leaf != None:
             return self.leaf
-        #TODO refactor this into the operation class
-        if self.op == Operation.PLUS:
-            return self.left.evaluate() + self.right.evaluate()
-        elif self.op == Operation.MULT:
-            return self.left.evaluate() * self.right.evaluate()
-
+        return Operation.evaluate(self.op, self.left.evaluate(), self.right.evaluate())
+        
     def depth(self):
         if self.leaf != None:
             return 0
@@ -30,11 +47,7 @@ class PostfixTree:
     def __str__(self):
         if self.leaf != None:
             return '[' + str(self.leaf) + ']'
-        #todo refactor this into the operation class
-        if self.op == Operation.PLUS:
-            return '[' + '+' + str(self.left) + str(self.right) + ']'
-        elif self.op == Operation.MULT:
-            return '[' + '*' + str(self.left) + str(self.right) + ']'
+        return '[' + Operation.to_str(self.op) + str(self.left) + str(self.right) + ']'
 
 class RandomTree(PostfixTree):
     def __init__(self, lb, ub, p, scale):
@@ -50,7 +63,24 @@ class RandomTree(PostfixTree):
         else:
             self.left = RandomTree(lb, ub, p*scale, scale)
             self.right = RandomTree(lb, ub, p*scale, scale)
-            self.op = [ Operation.PLUS, Operation.MULT ][int(random.random()*2)]
+            
+            self.op = Operation.PLUS
+            #self.op = [ Operation.PLUS, Operation.MULT ][int(random.random()*2)]
+
+class FullTree(PostfixTree):
+    def __init__(self, lb, ub, depth, op):
+        super().__init__()
+        depth = int(depth)
+        lb = int(lb)
+        ub = int(ub)
+        op = int(op)
+        
+        if depth == 0:
+            self.leaf = random.randint(lb, ub)
+        else:
+            self.left = FullTree(lb, ub, depth-1)
+            self.right = FullTree(lb, ub, depth-1)
+            self.op = op
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -73,8 +103,8 @@ if __name__ == '__main__':
     #tree types
     if args.tree_type == 'RandomTree':
         tree = lambda : RandomTree(args.p1, args.p2, args.p3, args.p4)
-    elif args.tree_type == 'full':
-        tree = lambda : RandomTree(args.p1, args.p2, args.p3, args.p4)
+    elif args.tree_type == 'FullTree':
+        tree = lambda : FullTree(args.p1, args.p2, args.p3, args.p4)
     else:
         exit()
 
