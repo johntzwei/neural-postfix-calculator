@@ -1,76 +1,66 @@
-import keras
-from keras.models import Sequential
-from keras.layers import Dense, Activation, Dropout, Embedding, LSTM
-from keras.preprocessing.sequence import pad_sequences
-from sklearn.preprocessing import LabelBinarizer
+import argparse
 import csv
 import numpy as np
 
-def decode_csv(fn, max_len, end_char='$'):
+from sklearn.preprocessing import LabelBinarizer
+
+def decode_csv(fn, max_len, split_char='', end_char='$', pad_seq=True):
     with open(fn) as handle:
         data = list(csv.reader(handle, delimiter='\t'))
         
         #encode to tensor with [ [expr, val]... ]
         #where expr is a one hot 2d tensor
-        X = list(map(lambda x: x[0]+end_char, data))
         y = list(map(lambda x: int(x[1]), data))
+
+        X = filter(lambda x: len(x) > max_len, data)
+        X = list(map(lambda x: x[0]+end_char, data))
 
         #one hot encoding into x
         lb = LabelBinarizer()
-        lb.fit(list(set(''.join(X))))
+        lb.fit(list(set((''.join(X)).split(split_char))))
         X = list(map(lambda x: lb.transform(list(x)), X))
 
-        #truncate
-        #X = list(map(lambda x: (x+np.array([[0]*lb.classes_.shape[0]])*max_len)[:max_len], X))
-
-        #pad sequences for now
-        padding = np.zeros((lb.classes_.shape[0],))
-        X = pad_sequences(X, value=padding)
+        if pad_seq:
+            padding = np.zeros((lb.classes_.shape[0],))
+            X = K.preprocessing.pad_sequences(X, value=padding)
 
         return np.array(X), np.array(y)
 
-def one_hot():
+#builders of different rnn models to evaluate
+def rnn(input_shape, num_layers=2, hidden_dim=50):
+    pass
+
+def lstm(input_shape, hidden_layers=1, hidden_dim=50, dropout=0):
+    model = K.Sequential()
+    model.add(Masking(mask_value=np.zeros(input_shape[1]), input_shape=input_shape))
+    #TODO figure out the dropout scheme to use
+    for i in hidden_layers:
+        model.add(LSTM(hidden_dim, return_sequences=True))
+    #last layer for regression
+    model.add(LSTM(1))
+    return model
+
+def bidirectional_lstm(layers, num_nodes):
     pass
 
 if __name__ == '__main__':
-    #argparse
-    TRAIN_FILE = 'data/train'
-    TEST_FILE = 'data/test'
-    TRAIN = True
+    parser = argparse.ArgumentParser()
+    parser.add_argument('training_ex', help='the tab seperated training file containing an example and label.', type=str)
+    parser.add_argument('testing_ex', help='the tab seperated testing file containing an example and label.', type=str)
+    parser.add_argument('--epochs', help='the number of epochs to train', type=int, default=50)
+    args = parser.parse_args()
 
-    #hyper parameters
-    max_len = 50
-    max_features = 200
+    import keras as K
+    X_train, y_train = decode_csv(args.training_ex) 
 
-    if TRAIN:
-        print('train option, will train and save model')
-        print('loading training data...')
-        X_train, y_train = decode_csv(TRAIN_FILE, max_len)
-        print('loaded training data.')
-        print(X_train.shape)
-        print('first training example: ')
-        print(X_train[0])
+    #get models to train
+    names = [ '1-LSTM' ]
+    models = [ lstm((X.shape[1],X.shape[2])) ]
+    #names = [ 'Simple RNN', 'Vanilla LSTM', 'Deep LSTM', 'Bidirectional LSTM' ]
+    #models = [ rnn(), vanilla_lstm(), lstm(2, 50), bidirectional_lstm() ]
 
-        model = Sequential()
-        model.add(LSTM(10, input_shape=(X_train.shape[1], X_train.shape[2]), return_sequences=True, recurrent_dropout=0.25))
-        model.add(LSTM(10, recurrent_dropout=0.25))
-        model.add(Dense(1, activation='relu'))
+    #train
+    for name, model in zip(names, models):
+        model.compile(optimizer='adam', loss='mean_squared_error', metrics=['accuracy'])
+        model.fit(X_train, y_train, epochs=args.epochs, batch_size=32)
 
-        model.compile(optimizer='adam', loss='mean_squared_error', metrics=['mean_squared_error', 'accuracy'], epochs=3)
-        print('model compiled!')
-
-        print('training model...')
-        model.fit(X_train, y_train)
-        print('model trained!')
-
-        #model.save('model.m5')
-        #print('model saved to local.')
-    else:
-        #load model
-        pass
-
-    #test
-    X_test, y_test = decode_csv(TEST_FILE, max_len)
-    print('loaded testing data.')
-
-    #model.predict(X_test[:3])
