@@ -42,6 +42,8 @@ class PostfixTree:
             return '[' + str(self.leaf) + ']'
         return '[' + Operation.to_str(self.op) + str(self.left) + str(self.right) + ']'
 
+import functools
+@functools.lru_cache(maxsize=None)
 def generateFullTrees(lb, ub, ops, depth):
     trees = []
     if depth <= 0:
@@ -51,34 +53,20 @@ def generateFullTrees(lb, ub, ops, depth):
     else:
         subtrees = generateFullTrees(lb, ub, ops, depth-1)
         for op in ops:
-            for i in range(lb,ub):
-                for x in subtrees:
-                    for y in subtrees:
-                        t = PostfixTree(left=x, right=y, op=int(op))
-                        trees.append(t)
+            for x in subtrees:
+                for y in subtrees:
+                    t = PostfixTree(left=x, right=y, op=int(op))
+                    trees.append(t)
     return trees
 
 def generateAllTrees(lb, ub, ops, depth):
-    trees = []
-    if depth <= 0:
-        for i in range(lb, ub):
-            t = PostfixTree(leaf=i)
-            trees.append(t)
-    else:
-        subtrees = generateAllTrees(lb, ub, ops, depth-1)
-        for op in ops:
-            for i in range(lb,ub):
-                for x in subtrees:
-                    for y in subtrees:
-                        t = PostfixTree(left=x, right=y, op=int(op))
-                        trees.append(t)
-    return trees
+    return sum(map(lambda x: generateFullTrees(lb, ub, ops, x), range(0,depth+1)), [])
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('output', help='where to output, options will be appended to filename', type=str)
-    parser.add_argument('num_ex', help='number of examples (trees/expressions) to generate', type=int)
     parser.add_argument('tree_type', help='the name of the class which generates the tree', type=str)
+    parser.add_argument('--num_ex', help='number of examples (trees/expressions) to cutoff', type=int)
     parser.add_argument('--p1', help='the first parameter for the tree generator')
     parser.add_argument('--p2', help='the second parameter for the tree generator')
     parser.add_argument('--p3', help='the third parameter for the tree generator')
@@ -99,7 +87,9 @@ if __name__ == '__main__':
     #generators return lists not generators!!
     trees.extend(generator())
     trees = list(map(lambda x: (str(x), x.evaluate()), trees))
-    trees = trees[:num_ex] 
+
+    if args.num_ex != None:
+        trees = trees[:num_ex] 
 
     fn = '%s_n%d_t%s_p1%s_p2%s_p3%s_p4%s_p5%s' % (args.output, len(trees), args.tree_type, args.p1, args.p2, args.p3, args.p4, args.p5)
     with open(fn, 'w') as handle:
