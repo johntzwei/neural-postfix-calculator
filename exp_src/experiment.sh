@@ -6,11 +6,30 @@ ROOT=/home/johntzwei/Documents/uw2017/neural-postfix-calculator
 NAME=`basename $0 | cut -d . -f 1`
 EXP_DIR=$ROOT/experiments/$NAME
 
-mkdir $EXP_DIR
+SERIES='preliminaries'
+
+EPOCHS=100
+BATCH_SIZE=32
+TRAIN_TREE_TYPE="generateAllTrees"
+TRAIN_P1=0
+TRAIN_P2=10
+TRAIN_P3=10
+TRAIN_P4=0
+TRAIN_P5=0
+
+TEST_TREE_TYPE="generateAllTrees"
+TEST_P1=0
+TEST_P2=10
+TEST_P3=10
+TEST_P4=0
+TEST_P5=0
+
+mkdir -p $EXP_DIR
 
 #train/test generation
-training_ex=`python $ROOT/trees.py data/$NAME-train generateAllTrees --p1 0 --p2 10 --p3 0 --p4 0`
-testing_ex=`python $ROOT/trees.py data/$NAME-test generateAllTrees --p1 0 --p2 10 --p3 0 --p4 0`
+train_ex="$ROOT/data/$NAME-train_${TRAIN_TREE_TYPE}_${TRAIN_P1}_${TRAIN_P2}_${TRAIN_P3}_${TRAIN_P4}_${TRAIN_P5}"
+test_ex="$ROOT/data/$NAME-test_${TEST_TREE_TYPE}_${TEST_P1}_${TEST_P2}_${TEST_P3}_${TEST_P4}_${TEST_P5}"
+python $ROOT/trees.py $TRAIN_TREE_TYPE --p1 $TRAIN_P1 --p2 $TRAIN_P2 --p3 $TRAIN_P3 --p4 $TRAIN_P4 --p5 $TRAIN_P5 > $train_ex
+python $ROOT/trees.py $TEST_TREE_TYPE --p1 $TEST_P1 --p2 $TEST_P2 --p3 $TEST_P3 --p4 $TEST_P4 --p5 $TEST_P5 > $test_ex
 
-#train/test lstm with all architectures
-python $ROOT/lstm.py $ROOT/data/$training_ex $ROOT/data/$testing_ex $EXP_DIR/ --epochs 1000
+python $ROOT/main.py $train_ex $test_ex $SERIES $EXP_DIR --epochs $EPOCHS --batch_size $BATCH_SIZE
