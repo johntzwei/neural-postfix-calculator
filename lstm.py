@@ -109,7 +109,7 @@ if __name__ == '__main__':
         #test
         (X_test, y_test), label_bin = decode_csv(args.testing_ex, lb=label_bin, max_len=X_train.shape[1])
         y_pred = model.predict(X_test)
-        pred_fn = '%s_%s' % (args.predict_file, name)
+        pred_fn = 'predict_%s' % name
         with open(pred_fn,'wt') as pred_handle:
             test_handle = open(args.testing_ex)
             for line,y in zip(test_handle, y_pred):
@@ -129,7 +129,7 @@ if __name__ == '__main__':
         with open(fn, 'wt') as handle:
             for i, mse in enumerate(history):
                 handle.write('%d\t%f\n' % (i, mse))
-    save_training_loss_graph('%s_training-loss-graph.png' % args.predict_file, losses)
+    save_training_loss_graph('training-loss-graph.png', losses)
 
     with open('accuracy_report', 'wt') as handle:
         for name, acc in accuracies.items():
