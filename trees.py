@@ -95,3 +95,6 @@ if __name__ == '__main__':
     with open(fn, 'w') as handle:
         for expr, val in trees:
             handle.write('%s\t%d\n' % (expr, val))
+
+    #print out the filename for bash script usage
+    print(fn)
