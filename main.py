@@ -4,13 +4,13 @@ import argparse
 import numpy as np
 import matplotlib.pyplot as plt
 
-import .models
+import models
 
 from keras.preprocessing.sequence import pad_sequences
 from sklearn.preprocessing import LabelBinarizer
 from sklearn.metrics import accuracy_score, mean_squared_error
 
-def decode_csv(fn, end_char='$', lb=None):
+def decode_csv(fn, end_char='$', lb=None, max_len=None):
     with open(fn) as handle:
         #encode to tensor with [ [expr, val]... ]
         #where expr is a 2d tensor with [ [ one-hot char ]... ]
@@ -21,12 +21,14 @@ def decode_csv(fn, end_char='$', lb=None):
 
         #one hot encoding into x
         if lb == None:
-            lb = LabelBinarizer(sparse_output=True)
+            lb = LabelBinarizer()
             lb.fit(list(set((''.join(X)))))
         X = [ lb.transform(list(expr)) for expr in X ]
 
         padding = np.zeros((lb.classes_.shape[0],))
-        X = keras.preprocessing.sequence.pad_sequences(X, value=padding)
+        #this takes the max len of the training set.
+        #if test set has an ex that is longer we are toast
+        X = pad_sequences(X, value=padding, maxlen=max_len)
 
         return ((np.array(X), np.array(y)), lb)
 
@@ -49,8 +51,8 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('training_ex', help='the tab seperated training file containing an example and label.', type=str)
     parser.add_argument('testing_ex', help='the tab seperated testing file containing an example and label.', type=str)
+    parser.add_argument('series', help='series of models to get from a function within models.py', type=str, default='preliminaries')
     parser.add_argument('exp_dir', help='the directory to write model predictions and metrics to', type=str)
-    parser.add_argument('--series', help='series of models to get from a function within models.py', type=str, default='preliminaries')
     parser.add_argument('--epochs', help='the number of epochs to train', type=int, default=100)
     parser.add_argument('--batch_size', help='the number of epochs to train', type=int, default=32)
     args = parser.parse_args()
@@ -60,7 +62,7 @@ if __name__ == '__main__':
 
     #get models to train
     input_shape = (X_train.shape[1], X_train.shape[2])
-    keras_models = getattr(models, args.series)()
+    keras_models = getattr(models, args.series)(input_shape)
 
     #evaluate
     losses = {}

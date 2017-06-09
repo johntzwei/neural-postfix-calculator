@@ -1,15 +1,16 @@
+import numpy as np
 import keras
 from keras.models import Sequential
-from keras.layers import Masking, Dropout, Dense
+from keras.layers import Masking, Dropout, Activation
 from keras.layers.recurrent import LSTM, SimpleRNN
 
 cmp_all = lambda models, optimizer='adam', loss='mean_squared_error', metrics=['accuracy'] : [ model.compile(optimizer=optimizer, loss=loss, metrics=metrics) for model in models ]
 
 def preliminaries(input_shape):
     names = [ '2-lstm' ]
-    nnets = [ lstm(input_shape, hidden_dims=[50]) ]
+    nnets = [ lstm(input_shape, hidden_dims=[10]) ]
     cmp_all(nnets)
-    return list(zip(names, nns))
+    return list(zip(names, nnets))
 
 def lstm(input_shape, hidden_dims=[], dropout=0.25):
     model = Sequential()
