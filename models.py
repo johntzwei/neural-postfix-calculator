@@ -1,3 +1,5 @@
+import itertools
+
 import numpy as np
 import keras
 from keras.models import Sequential
@@ -18,6 +20,5 @@ def lstm(input_shape, hidden_dims=[], dropout=0.25):
     for dim in hidden_dims:
         model.add(LSTM(dim, return_sequences=True))
         model.add(Dropout(dropout))
-    model.add(LSTM(1))
-    model.add(Activation('elu'))
+    model.add(LSTM(1, activation='elu'))
     return model
