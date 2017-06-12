@@ -2,13 +2,13 @@
 # ...
 # ...
 
-ROOT=/home/johntzwei/Documents/uw2017/neural-postfix-calculator
+ROOT=/home/jwei/neural-postfix-calculator
 NAME=`basename $0 | cut -d . -f 1`
 EXP_DIR=$ROOT/experiments/$NAME
 
 SERIES='preliminaries'
 
-EPOCHS=1000
+EPOCHS=1
 BATCH_SIZE=32
 TRAIN_TREE_TYPE="generateAllTrees"
 TRAIN_P1=0

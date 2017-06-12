@@ -2,7 +2,6 @@ import os
 import csv
 import argparse
 import numpy as np
-import matplotlib.pyplot as plt
 
 import models
 
@@ -32,20 +31,14 @@ def decode_csv(fn, end_char='$', lb=None, max_len=None):
 
         return ((np.array(X), np.array(y)), lb)
 
-def save_training_loss_graph(fn, losses):
-        fig, ax = plt.subplots()
-        plt.title('Training Loss over Time')
-        plt.xlabel('Epoch')
-        plt.ylabel('Loss (Mean Squared Error)')
-
-        epochs = len(list(losses.values())[0])
-        for name, h in losses.items():
-            ax.plot(range(1, epochs+1), h, 'o', label=name)
-        legend = ax.legend(loc='upper right', shadow=True)
-
-        #write to file
-        plt.savefig(fn)
-        plt.show()
+def write_csv(exp_dir, fn, l):
+    fn = os.path.join(exp_dir, fn)
+    with open(fn, 'wt') as handle:
+        for row in l:
+            line = ''
+            for column in row:
+                line += '%s\t' % column
+            handle.write('%s\n' % line.strip())
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -73,30 +66,18 @@ if __name__ == '__main__':
 
         #test
         y_pred = model.predict(X_test)
-        pred_fn = os.path.join(args.exp_dir, 'predict_%s' % name)
-        with open(pred_fn,'wt') as pred_handle:
-            test_handle = open(args.testing_ex)
-            for line,y in zip(test_handle, y_pred):
-                pred_handle.write('%s\t%f\n' % (line.strip(), y))
+        scores = [ 
+                [ 'accuracy', accuracy_score(y_test, np.rint(y_pred)) ],
+                [ 'mean squared error',  mean_squared_error(y_test, y_pred) ] ]
+        testing_ex = map(lambda x: x.strip(), open(args.testing_ex))
+        y_pred = map(lambda x: x[0], y_pred)
+        write_csv(args.exp_dir, 'pred_%s' % name, list(zip(testing_ex, y_pred)) + scores)
         
-            accuracy = accuracy_score(y_test, np.rint(y_pred))
-            pred_handle.write('accuracy: %f\n' % accuracy)
-            pred_handle.write('mean squared error: %f\n' % mean_squared_error(y_test, y_pred))
-
-        #write down epoch training
+        #logging
         losses[name] = history.history['loss']
-        accuracies[name] = accuracy
+        accuracies[name] = scores[0][1] 
 
-    #TODO refactor
-    #graph epoch training
+    #output
+    write_csv(args.exp_dir, 'accuracy_report', accuracies.items())
     for name, history in losses.items():
-        fn = os.path.join(args.exp_dir, 'losses_%s' % name)
-        with open(fn, 'wt') as handle:
-            for i, mse in enumerate(history):
-                handle.write('%d\t%f\n' % (i, mse))
-    save_training_loss_graph(os.path.join(args.exp_dir, 'training-loss-graph.png'), losses)
-
-    fn = os.path.join(args.exp_dir, 'accuracy_report')
-    with open(fn, 'wt') as handle:
-        for name, acc in accuracies.items():
-            handle.write('%s\t%f\n' % (name, acc))
+        write_csv(args.exp_dir, 'losses_%s' % name, enumerate(history, 1))
