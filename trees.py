@@ -36,12 +36,18 @@ class PostfixTree:
         if self.leaf != None:
             return 0
         else:
-            return max(self.left.depth()+1, self.left.depth()+1)
+            return max(self.left.depth()+1, self.right.depth()+1)
 
     def __str__(self):
         if self.leaf != None:
             return '[' + str(self.leaf) + ']'
         return '[' + str(self.left) + str(self.right) + Operation.to_str(self.op) + ']'
+
+    def to_infix_str(self):
+        if self.leaf != None:
+            return '[' + str(self.leaf) + ']'
+        return '[' + self.left.to_infix_str() + Operation.to_str(self.op) + self.right.to_infix_str() + ']'
+
 
 import functools
 @functools.lru_cache(maxsize=None)
@@ -64,7 +70,7 @@ def _generateAllTrees(lb, ub, ops, depth):
     trees_lt_max_depth = []
     trees_of_max_depth = []
     if depth <= 0:
-        for i in range(lb, ub):
+        for i in range(lb, ub+1):
             t = PostfixTree(leaf=i)
             trees_of_max_depth.append(t)
     else:
@@ -73,8 +79,6 @@ def _generateAllTrees(lb, ub, ops, depth):
             for x in eq_depth:
                 for y in eq_depth + lt_depth:
                     trees_of_max_depth.append(PostfixTree(left=x, right=y, op=int(op)))
-                    if not x is y:
-                        trees_of_max_depth.append(PostfixTree(left=y, right=x, op=int(op)))
         trees_lt_max_depth = eq_depth + lt_depth
     return (trees_of_max_depth, trees_lt_max_depth)
 
@@ -102,6 +106,29 @@ def generateRandomTreesFixedNodes(lb, ub, ops, num_nodes, num_samples):
     for i in range(0, num_samples):
         yield _generateRandomTree(lb, ub, list(ops), num_nodes)
 
+#special trees
+@functools.lru_cache(maxsize=None)
+def _generateRightLeaningTrees(lb, ub, ops, depth):
+    trees = []
+    if depth <= 0:
+        for i in range(lb, ub+1):
+            t = PostfixTree(leaf=i)
+            trees.append(t)
+    else:
+        subtrees = _generateRightLeaningTrees(lb, ub, ops, depth-1)
+        for op in ops:
+            for x in subtrees:
+                left = PostfixTree(leaf=randint(lb, ub))
+                t = PostfixTree(
+                        left=left,
+                        right=x,
+                        op=int(op))
+                trees.append(t)
+    return trees
+
+def generateRightLeaningTrees(lb, ub, ops, depth):
+    return sum(map(lambda depth: _generateRightLeaningTrees(lb, ub, ops, depth+1), range(0, depth+1)), [])
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('tree_type', help='the name of the class which generates the tree', type=str)
@@ -110,6 +137,9 @@ if __name__ == '__main__':
     parser.add_argument('--p3', help='the third parameter for the tree generator')
     parser.add_argument('--p4', help='the fourth parameter for the tree generator')
     parser.add_argument('--p5', help='the fifth parameter for the tree generator')
+    parser.add_argument('--postfix', help='don\'t output postfix notation', action='store_const', const=False, default=True)
+    parser.add_argument('--infix', help='output infix notation', action='store_const', const=True, default=False)
+    parser.add_argument('--depth', help='output the depth of the expression', action='store_const', const=True, default=False)
     args = parser.parse_args()
 
     #tree types
@@ -121,13 +151,19 @@ if __name__ == '__main__':
         generator = lambda : generateRandomTrees(int(args.p1), int(args.p2), str(args.p3), int(args.p4), int(args.p5))
     elif args.tree_type == 'generateRandomTreesFixedNodes':
         generator = lambda : generateRandomTreesFixedNodes(int(args.p1), int(args.p2), str(args.p3), int(args.p4), int(args.p5))
+    elif args.tree_type == 'generateRightLeaningTrees':
+        generator = lambda : generateRightLeaningTrees(int(args.p1), int(args.p2), str(args.p3), int(args.p4))
     else:
         print('error')
         exit()
 
-    trees = []
-    trees.extend(generator())
-    trees = list(map(lambda x: (str(x), x.evaluate()), trees))
-
-    for expr, val in trees:
-        print('%s\t%d' % (expr, val))
+    for tree in generator():
+        line = []
+        if args.postfix:
+            line.append(str(tree))
+        if args.infix:
+            line.append(tree.to_infix_str())
+        if args.depth:
+            line.append(str(tree.depth()))
+        line.append(str(tree.evaluate()))
+        print('\t'.join(line))
