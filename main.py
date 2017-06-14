@@ -1,6 +1,7 @@
 import os
 import csv
 import argparse
+import pickle
 import numpy as np
 
 import models
@@ -52,17 +53,23 @@ if __name__ == '__main__':
 
     (X_train, y_train), label_bin = decode_csv(args.training_ex) 
     (X_test, y_test), _ = decode_csv(args.testing_ex, lb=label_bin, max_len=X_train.shape[1])
+    pickle.dump(label_bin, open(os.path.join(args.exp_dir, 'label_binarizer'), 'wb'))
 
     #get models to train
     input_shape = (X_train.shape[1], X_train.shape[2])
     keras_models = getattr(models, args.series)(input_shape)
 
     #evaluate
-    losses = {}
-    accuracies = {}
+    accuracies = []
     for name, model in keras_models:
+        architecture = open(os.path.join(args.exp_dir, '%s.json') % name, 'wt')
+        architecture.write(os.path.join(args.exp_dir, model.to_json()))
+
         #train
         history = model.fit(X_train, y_train, epochs=args.epochs)
+
+        #save
+        model.save_weights(os.path.join(args.exp_dir, '%s.h5') % name)
 
         #test
         y_pred = model.predict(X_test)
@@ -74,10 +81,8 @@ if __name__ == '__main__':
         write_csv(args.exp_dir, 'pred_%s' % name, list(zip(testing_ex, y_pred)) + scores)
         
         #logging
-        losses[name] = history.history['loss']
-        accuracies[name] = scores[0][1] 
+        write_csv(args.exp_dir, 'losses_%s' % name, enumerate(history.history['loss'], 1))
+        accuracies.append((name, scores[0][1]))
 
     #output
-    write_csv(args.exp_dir, 'accuracy_report', accuracies.items())
-    for name, history in losses.items():
-        write_csv(args.exp_dir, 'losses_%s' % name, enumerate(history, 1))
+    write_csv(args.exp_dir, 'accuracy_report', accuracies)
