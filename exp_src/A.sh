@@ -6,23 +6,24 @@ ROOT=/home/jwei/neural-postfix-calculator
 NAME=`basename $0 | cut -d . -f 1`
 EXP_DIR=$ROOT/experiments/$NAME
 
-SERIES='preliminaries'
+SERIES='architectureSearch'
 
-EPOCHS=50
+EPOCHS=30
 BATCH_SIZE=32
-TRAIN_TREE_TYPE="generateRandomTreesFixedNodes"
+TRAIN_TREE_TYPE="generateAllTrees"
 TRAIN_P1=0
-TRAIN_P2=1000
-TRAIN_P3=0
-TRAIN_P4=1
-TRAIN_P5=5000
+TRAIN_P2=1
+TRAIN_P3=02
+TRAIN_P4=3
+TRAIN_P5=0
 
-TEST_TREE_TYPE="generateRandomTreesFixedNodes"
+#the test set may have trees exceeding depth 4
+TEST_TREE_TYPE="generateRandomTrees"
 TEST_P1=0
-TEST_P2=1000
-TEST_P3=0
-TEST_P4=1
-TEST_P5=30
+TEST_P2=1
+TEST_P3=02
+TEST_P4=15
+TEST_P5=3000
 
 mkdir -p $EXP_DIR
 
