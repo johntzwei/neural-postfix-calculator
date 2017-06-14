@@ -69,7 +69,7 @@ if __name__ == '__main__':
         history = model.fit(X_train, y_train, epochs=args.epochs)
 
         #save
-        model.save_weights(os.path.join(args.exp_dir, '%s.h5') % name)
+        model.save(os.path.join(args.exp_dir, '%s.h5') % name)
 
         #test
         y_pred = model.predict(X_test)
