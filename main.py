@@ -32,6 +32,30 @@ def decode_csv(fn, end_char='$', lb=None, max_len=None):
 
         return ((np.array(X), np.array(y)), lb)
 
+def decode_seq2seq_csv(fn, end_char='$', lb=None, max_len=None):
+    with open(fn) as handle:
+        #encode to tensor with [ [expr1, expr2]... ]
+        #where expr1 and 2 is a 2d tensor with [ [ one-hot char ]... ]
+        data = list(csv.reader(handle, delimiter='\t'))
+        
+        y = [ row[1] + '$' for row in data ]
+        X = [ row[0] + '$' for row in data ]
+
+        #one hot encoding into x
+        if lb == None:
+            lb = LabelBinarizer()
+            lb.fit(list(set((''.join(X)))))
+        X = [ lb.transform(list(expr)) for expr in X ]
+        y = [ lb.transform(list(expr)) for expr in y ]
+
+        padding = lb.transform(['$'])[0]
+        #this takes the max len of the training set.
+        #if test set has an ex that is longer we are toast
+        X = pad_sequences(X, padding='post', value=padding, maxlen=max_len)
+        y = pad_sequences(y, padding='post', value=padding, maxlen=max_len)
+
+        return ((np.array(X), np.array(y)), lb)
+
 def write_csv(exp_dir, fn, l):
     fn = os.path.join(exp_dir, fn)
     with open(fn, 'wt') as handle:
@@ -40,6 +64,11 @@ def write_csv(exp_dir, fn, l):
             for column in row:
                 line += '%s\t' % column
             handle.write('%s\n' % line.strip())
+
+# takes in an arbitrary string and an infix expression
+# and gives some kind of accuracy measure - precision recall on trees?
+def some_kind_of_acc_measure(y_true, y_label):
+    pass
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -51,20 +80,20 @@ if __name__ == '__main__':
     parser.add_argument('--batch_size', help='the number of epochs to train', type=int, default=32)
     args = parser.parse_args()
 
+    decode_csv = decode_seq2seq_csv
+
     (X_train, y_train), label_bin = decode_csv(args.training_ex) 
     (X_test, y_test), _ = decode_csv(args.testing_ex, lb=label_bin, max_len=X_train.shape[1])
     pickle.dump(label_bin, open(os.path.join(args.exp_dir, 'label_binarizer'), 'wb'))
 
     #get models to train
     input_shape = (X_train.shape[1], X_train.shape[2])
-    keras_models = getattr(models, args.series)(input_shape)
+    output_shape = (y_train.shape[1], y_train.shape[2])
+    keras_models = getattr(models, args.series)(input_shape, output_shape)
 
     #evaluate
     accuracies = []
     for name, model in keras_models:
-        architecture = open(os.path.join(args.exp_dir, '%s.json') % name, 'wt')
-        architecture.write(os.path.join(args.exp_dir, model.to_json()))
-
         #train
         history = model.fit(X_train, y_train, epochs=args.epochs)
 
@@ -73,12 +102,15 @@ if __name__ == '__main__':
 
         #test
         y_pred = model.predict(X_test)
+
+        #turn the predicted vectors into actual strings
+        argmax = np.argmax(y_pred, axis=-1)
+        y_seq_pred = [ ''.join([ label_bin.classes_[i] for i in v]) for v in argmax ]
+
         scores = [ 
-                [ 'accuracy', accuracy_score(y_test, np.rint(y_pred)) ],
-                [ 'mean squared error',  mean_squared_error(y_test, y_pred) ] ]
+                [ 'accuracy', '' ] ]
         testing_ex = map(lambda x: x.strip(), open(args.testing_ex))
-        y_pred = map(lambda x: x[0], y_pred)
-        write_csv(args.exp_dir, 'pred_%s' % name, list(zip(testing_ex, y_pred)) + scores)
+        write_csv(args.exp_dir, 'pred_%s' % name, list(zip(testing_ex, y_seq_pred)) + scores)
         
         #logging
         write_csv(args.exp_dir, 'losses_%s' % name, enumerate(history.history['loss'], 1))
