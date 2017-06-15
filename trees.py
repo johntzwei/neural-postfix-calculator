@@ -48,6 +48,56 @@ class PostfixTree:
             return '[' + str(self.leaf) + ']'
         return '[' + self.left.to_infix_str() + Operation.to_str(self.op) + self.right.to_infix_str() + ']'
 
+    #parsing from postfix/infix expressions
+    #second return item is whether it was correctly parsed
+    def compute_brackets(expr):
+        stack = []
+        brackets = {}
+        for i, char in enumerate(expr):
+            if char == '[':
+                stack.append(i)
+            elif char == ']':
+                if len(stack) == 0:
+                    return None
+                close = stack.pop()
+                brackets[i] = close
+                brackets[close] = i
+            else:
+                pass
+        return brackets
+
+    #if returns None, that means expressions cannot be parsed
+    def parse_expr(expr, index=0, brackets=None, pf_or_in=True):
+        if brackets == None:
+            brackets = PostfixTree.compute_brackets(expr)
+            if brackets == None:
+                return None
+        try:
+            leaf = int(expr[1:-1])
+            return PostfixTree(leaf=leaf)
+        #if not atomic
+        except:
+            if pf_or_in:
+                #postfix
+                op = Operation._s.index(expr[-2])
+                left_begin = 1
+                left_end = brackets[index+1] - index + 1
+                right_begin = left_end
+                right_end = -2
+            else:
+                #infix
+                left_begin = 1
+                left_end = brackets[index+1] - index + 1
+                op = Operation._s.index(expr[left_end])
+                right_begin = left_end + 1
+                right_end = -1
+                pass
+            left = PostfixTree.parse_expr(expr[left_begin:left_end], index=index+left_begin, brackets=brackets, pf_or_in=pf_or_in)
+            right = PostfixTree.parse_expr(expr[right_begin:right_end], index=index+right_begin, brackets=brackets, pf_or_in=pf_or_in)
+            if left != None and right != None:
+                return PostfixTree(op=op, left=left, right=right)
+            else:
+                return None
 
 import functools
 @functools.lru_cache(maxsize=None)
