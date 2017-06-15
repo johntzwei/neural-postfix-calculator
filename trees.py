@@ -79,6 +79,8 @@ def _generateAllTrees(lb, ub, ops, depth):
             for x in eq_depth:
                 for y in eq_depth + lt_depth:
                     trees_of_max_depth.append(PostfixTree(left=x, right=y, op=int(op)))
+                    if x != y:
+                        trees_of_max_depth.append(PostfixTree(left=y, right=x, op=int(op)))
         trees_lt_max_depth = eq_depth + lt_depth
     return (trees_of_max_depth, trees_lt_max_depth)
 
