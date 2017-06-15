@@ -8,22 +8,22 @@ EXP_DIR=$ROOT/experiments/$NAME
 
 SERIES='preliminary_seq2seq'
 
-EPOCHS=1000
+EPOCHS=100
 BATCH_SIZE=32
 TRAIN_TREE_TYPE="generateRandomTrees"
 TRAIN_P1=1
-TRAIN_P2=5
+TRAIN_P2=50000
 TRAIN_P3=02
-TRAIN_P4=5
-TRAIN_P5=5000
+TRAIN_P4=1
+TRAIN_P5=40000
 
 #the test set may have trees exceeding depth 4
 TEST_TREE_TYPE="generateRandomTrees"
 TEST_P1=1
-TEST_P2=5
+TEST_P2=50000
 TEST_P3=02
-TEST_P4=5
-TEST_P5=300
+TEST_P4=1
+TEST_P5=1000
 
 mkdir -p $EXP_DIR
 
