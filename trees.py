@@ -48,6 +48,12 @@ class PostfixTree:
             return '[' + str(self.leaf) + ']'
         return '[' + self.left.to_infix_str() + Operation.to_str(self.op) + self.right.to_infix_str() + ']'
 
+    def size(self):
+        if self.leaf != None:
+            return 1
+        else:
+            return 1 + self.left.size() + self.right.size()
+
     #parsing from postfix/infix expressions
     #second return item is whether it was correctly parsed
     def compute_brackets(expr):
@@ -79,15 +85,24 @@ class PostfixTree:
         except:
             if pf_or_in:
                 #postfix
-                op = Operation._s.index(expr[-2])
                 left_begin = 1
                 left_end = brackets[index+1] - index + 1
+
                 right_begin = left_end
                 right_end = -2
+
+                if expr[-2] not in Operation._s:
+                    return None
+                op = Operation._s.index(expr[-2])
+
             else:
                 #infix
                 left_begin = 1
                 left_end = brackets[index+1] - index + 1
+
+                if expr[left_end] not in Operation._s:
+                    return None
+
                 op = Operation._s.index(expr[left_end])
                 right_begin = left_end + 1
                 right_end = -1
