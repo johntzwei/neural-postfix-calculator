@@ -60,15 +60,28 @@ def f1(precision, recall):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('model', help='the file name of the trained keras model', type=str)
+    #parser.add_argument('model_architecture', help='the file name of the trained keras model', type=str)
+    parser.add_argument('model_weights', help='the file name of the trained keras model', type=str)
     parser.add_argument('lb_bin', help='the pickled label_binarizer', type=str)
     parser.add_argument('--test_ex', help='the tab separated files of testing examples', type=str)
     args = parser.parse_args()
 
-    expr = str(raw_input())
+    #get user input
+    expr = []
+    while True:
+        i = str(input())
+        if i == '':
+            break
+        expr.append(i)
     
-    from keras.models import load_model
+    from models import seq2seq, cmp_all
+    model = seq2seq((None, 11), (22, 11), hidden_dims=30, depth=(1,1), dropout=0.5) 
+    model.load_weights(args.model_weights)
+    cmp_all([ model ])
 
     lb_bin = pickle.load(open(args.lb_bin,'rb'))
-    model = load_model(args.model)
     end_char = '$'  #should probably argparse this
+
+
+
+

@@ -94,7 +94,12 @@ if __name__ == '__main__':
         history = model.fit(X_train, y_train, epochs=args.epochs)
 
         #save
-        model.save(os.path.join(args.exp_dir, '%s.h5') % name)
+        model.save_weights(os.path.join(args.exp_dir, '%s.h5') % name)
+        model_info = [ 
+                [ 'input_shape', str(model.input_shape) ],
+                [ 'output_shape', str(model.output_shape) ],
+                [ 'train', args.training_ex ] ]
+        write_csv(args.exp_dir, '%s' % name, model_info)
 
         #evaluate
         testing_ex = [ line.strip() for line in open(args.testing_ex) ]

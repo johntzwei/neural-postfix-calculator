@@ -177,6 +177,14 @@ def generateRandomTreesFixedNodes(lb, ub, ops, num_nodes, num_samples):
     for i in range(0, num_samples):
         yield _generateRandomTree(lb, ub, list(ops), num_nodes)
 
+def generateRandomTreesTrimmed(lb, ub, ops, num_nodes, num_samples, max_depth=5):
+    for i in range(0, num_samples):
+        while True:
+            T = _generateRandomTree(lb, ub, list(ops), num_nodes)
+            if T.depth() <= max_depth:
+                break
+        yield T
+
 #special trees
 @functools.lru_cache(maxsize=None)
 def _generateLeaningTrees(lb, ub, ops, depth, lean='right'):
