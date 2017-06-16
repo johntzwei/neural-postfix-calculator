@@ -175,17 +175,24 @@ def generateRandomTreesFixedNodes(lb, ub, ops, num_nodes, num_samples):
 
 #special trees
 @functools.lru_cache(maxsize=None)
-def _generateRightLeaningTrees(lb, ub, ops, depth):
+def _generateLeaningTrees(lb, ub, ops, depth, lean='right'):
     trees = []
     if depth <= 0:
         for i in range(lb, ub+1):
             t = PostfixTree(leaf=i)
             trees.append(t)
     else:
-        subtrees = _generateRightLeaningTrees(lb, ub, ops, depth-1)
+        subtrees = _generateLeaningTrees(lb, ub, ops, depth-1, lean=lean)
         for op in ops:
             for x in subtrees:
                 left = PostfixTree(leaf=randint(lb, ub))
+
+                #swap left and right
+                if lean == 'left':
+                    s = x
+                    x = left
+                    left = s
+
                 t = PostfixTree(
                         left=left,
                         right=x,
@@ -194,7 +201,10 @@ def _generateRightLeaningTrees(lb, ub, ops, depth):
     return trees
 
 def generateRightLeaningTrees(lb, ub, ops, depth):
-    return sum(map(lambda depth: _generateRightLeaningTrees(lb, ub, ops, depth+1), range(0, depth+1)), [])
+    return sum(map(lambda depth: _generateLeaningTrees(lb, ub, ops, depth), range(0, depth+1)), [])
+
+def generateLeftLeaningTrees(lb, ub, ops, depth):
+    return sum(map(lambda depth: _generateLeaningTrees(lb, ub, ops, depth, lean='left'), range(0, depth+1)), [])
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -220,6 +230,8 @@ if __name__ == '__main__':
         generator = lambda : generateRandomTreesFixedNodes(int(args.p1), int(args.p2), str(args.p3), int(args.p4), int(args.p5))
     elif args.tree_type == 'generateRightLeaningTrees':
         generator = lambda : generateRightLeaningTrees(int(args.p1), int(args.p2), str(args.p3), int(args.p4))
+    elif args.tree_type == 'generateLeftLeaningTrees':
+        generator = lambda : generateLeftLeaningTrees(int(args.p1), int(args.p2), str(args.p3), int(args.p4))
     else:
         print('error')
         exit()
