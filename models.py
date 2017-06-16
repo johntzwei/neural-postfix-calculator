@@ -2,7 +2,7 @@ import itertools
 import numpy as np
 
 import seq2seq
-from seq2seq.models import Seq2Seq
+from seq2seq.models import SimpleSeq2Seq, Seq2Seq
 
 import keras
 from keras.models import Sequential
@@ -12,8 +12,8 @@ from keras.layers.recurrent import LSTM, SimpleRNN
 cmp_all = lambda models, optimizer='adam', loss='mean_squared_error', metrics=['accuracy'] : [ model.compile(optimizer=optimizer, loss=loss, metrics=metrics) for model in models ]
 
 def preliminary_seq2seq(input_shape, output_shape):
-    names = [ 'simple-seq2seq-2x20' ]
-    nnets = [ seq2seq(input_shape, output_shape, hidden_dims=[20], depth=(2,2)) ]
+    names = [ 'simple-seq2seq-2x30' ]
+    nnets = [ seq2seq(input_shape, output_shape, hidden_dims=20, depth=(2,2), dropout=0.5) ]
     cmp_all(nnets)
     return list(zip(names, nnets))
 
@@ -32,8 +32,8 @@ def preliminaries(input_shape):
     cmp_all(nnets)
     return list(zip(names, nnets))
 
-def seq2seq(input_shape, output_shape, hidden_dims=[10], dropout=0.25):
-    model = Seq2Seq(input_dim=input_shape[1], hidden_dim=hidden_dims[0], output_length=output_shape[0], output_dim=output_shape[1])
+def seq2seq(input_shape, output_shape, hidden_dims=[10], depth=(1,1), dropout=0.25):
+    model = SimpleSeq2Seq(input_dim=input_shape[1], hidden_dim=hidden_dims, output_length=output_shape[0], output_dim=output_shape[1], depth=depth, dropout=dropout)
     return model
 
 def lstm(input_shape, hidden_dims=[], dropout=0.25):

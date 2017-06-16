@@ -5,6 +5,7 @@ import pickle
 import numpy as np
 
 import models
+from test import evaluate, convert_vectors
 
 from keras.preprocessing.sequence import pad_sequences
 from sklearn.preprocessing import LabelBinarizer
@@ -65,11 +66,6 @@ def write_csv(exp_dir, fn, l):
                 line += '%s\t' % column
             handle.write('%s\n' % line.strip())
 
-# takes in an arbitrary string and an infix expression
-# and gives some kind of accuracy measure - precision recall on trees?
-def some_kind_of_acc_measure(y_true, y_label):
-    pass
-
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('training_ex', help='the tab seperated training file containing an example and label.', type=str)
@@ -100,21 +96,15 @@ if __name__ == '__main__':
         #save
         model.save(os.path.join(args.exp_dir, '%s.h5') % name)
 
-        #test
-        y_pred = model.predict(X_test)
-
-        #turn the predicted vectors into actual strings
-        argmax = np.argmax(y_pred, axis=-1)
-        y_seq_pred = [ ''.join([ label_bin.classes_[i] for i in v]) for v in argmax ]
-
-        scores = [ 
-                [ 'accuracy', '' ] ]
-        testing_ex = map(lambda x: x.strip(), open(args.testing_ex))
-        write_csv(args.exp_dir, 'pred_%s' % name, list(zip(testing_ex, y_seq_pred)) + scores)
+        #evaluate
+        testing_ex = [ line.strip() for line in open(args.testing_ex) ]
+        test_exprs = [ line.split('\t')[0] for line in testing_ex ]
+        y_seq_pred, precision, recall, f1 = evaluate(test_exprs, X_test, y_test, model, label_bin)
         
-        #logging
+        #write predictions for test file
+        scores = [ 
+                [ 'unlabeled precision', precision ],
+                [ 'unlabeled recall', recall ],
+                [ 'unlabeled f1', f1 ] ]
+        write_csv(args.exp_dir, 'pred_%s' % name, list(zip(testing_ex, y_seq_pred)) + scores)
         write_csv(args.exp_dir, 'losses_%s' % name, enumerate(history.history['loss'], 1))
-        accuracies.append((name, scores[0][1]))
-
-    #output
-    write_csv(args.exp_dir, 'accuracy_report', accuracies)

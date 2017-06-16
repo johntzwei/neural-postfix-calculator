@@ -8,7 +8,7 @@ EXP_DIR=$ROOT/experiments/$NAME
 
 SERIES='preliminary_seq2seq'
 
-EPOCHS=1
+EPOCHS=100
 BATCH_SIZE=32
 TRAIN_TREE_TYPE="generateAllTrees"
 TRAIN_P1=0
@@ -18,7 +18,7 @@ TRAIN_P4=2
 TRAIN_P5=0
 
 TEST_SPLIT_TRAIN=true
-TEST_PER=20         #percentage out of 100
+TEST_PER=10         #percentage out of 100
 
 TEST_TREE_TYPE=""
 TEST_P1=0

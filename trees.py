@@ -73,7 +73,7 @@ class PostfixTree:
         return brackets
 
     #if returns None, that means expressions cannot be parsed
-    def parse_expr(expr, index=0, brackets=None, pf_or_in=True):
+    def parse_expr(expr, index=0, brackets=None, postfix=True):
         if brackets == None:
             brackets = PostfixTree.compute_brackets(expr)
             if brackets == None:
@@ -83,35 +83,39 @@ class PostfixTree:
             return PostfixTree(leaf=leaf)
         #if not atomic
         except:
-            if pf_or_in:
-                #postfix
-                left_begin = 1
-                left_end = brackets[index+1] - index + 1
+            try:
+                if postfix:
+                    #postfix
+                    left_begin = 1
+                    left_end = brackets[index+1] - index + 1
 
-                right_begin = left_end
-                right_end = -2
+                    right_begin = left_end
+                    right_end = -2
 
-                if expr[-2] not in Operation._s:
+                    if expr[-2] not in Operation._s:
+                        return None
+                    op = Operation._s.index(expr[-2])
+
+                else:
+                    #infix
+                    left_begin = 1
+                    left_end = brackets[index+1] - index + 1
+
+                    if expr[left_end] not in Operation._s:
+                        return None
+
+                    op = Operation._s.index(expr[left_end])
+                    right_begin = left_end + 1
+                    right_end = -1
+                    pass
+                left = PostfixTree.parse_expr(expr[left_begin:left_end], index=index+left_begin, brackets=brackets, postfix=postfix)
+                right = PostfixTree.parse_expr(expr[right_begin:right_end], index=index+right_begin, brackets=brackets, postfix=postfix)
+                if left != None and right != None:
+                    return PostfixTree(op=op, left=left, right=right)
+                else:
                     return None
-                op = Operation._s.index(expr[-2])
-
-            else:
-                #infix
-                left_begin = 1
-                left_end = brackets[index+1] - index + 1
-
-                if expr[left_end] not in Operation._s:
-                    return None
-
-                op = Operation._s.index(expr[left_end])
-                right_begin = left_end + 1
-                right_end = -1
-                pass
-            left = PostfixTree.parse_expr(expr[left_begin:left_end], index=index+left_begin, brackets=brackets, pf_or_in=pf_or_in)
-            right = PostfixTree.parse_expr(expr[right_begin:right_end], index=index+right_begin, brackets=brackets, pf_or_in=pf_or_in)
-            if left != None and right != None:
-                return PostfixTree(op=op, left=left, right=right)
-            else:
+            except:
+                #defensive programming!
                 return None
 
 import functools
