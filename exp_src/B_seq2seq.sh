@@ -8,13 +8,13 @@ EXP_DIR=$ROOT/experiments/$NAME
 
 SERIES='preliminary_seq2seq'
 
-EPOCHS=100
-BATCH_SIZE=32
+EPOCHS=30000
+BATCH_SIZE=1
 TRAIN_TREE_TYPE="generateAllTrees"
 TRAIN_P1=0
 TRAIN_P2=0
 TRAIN_P3=0
-TRAIN_P4=4
+TRAIN_P4=3
 TRAIN_P5=0
 
 TEST_PER=10         #percentage out of 100
@@ -53,7 +53,7 @@ if [ ! -f $test_ex ]; then
     python $ROOT/trees.py $TEST_TREE_TYPE --p1 $TEST_P1 --p2 $TEST_P2 --p3 $TEST_P3 --p4 $TEST_P4 --p5 $TEST_P5 --infix > $test_ex
 fi
 
-if [[ 0 -eq $TEST_PER ]]; then
+if [[ 0 -ne $TEST_PER ]] && [[ ! -f $test_ex ]]; then
     echo "spliting train file with the test file"
     num_ex=`wc -l $train_ex | cut -f 1 -d ' '`
     head -n $(( ($num_ex * $TEST_PER) / 100 )) $train_ex > $test_ex

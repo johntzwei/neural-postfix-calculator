@@ -146,11 +146,11 @@ def _generateAllTrees(lb, ub, ops, depth):
         eq_depth, lt_depth = _generateAllTrees(lb, ub, ops, depth-1)
         for op in ops:
             for x in eq_depth:
+                for y in eq_depth:
+                    trees_of_max_depth.append(PostfixTree(left=x, right=y, op=int(op)))
                 for y in lt_depth:
                     trees_of_max_depth.append(PostfixTree(left=x, right=y, op=int(op)))
                     trees_of_max_depth.append(PostfixTree(left=y, right=x, op=int(op)))
-                for y in eq_depth:
-                    trees_of_max_depth.append(PostfixTree(left=x, right=y, op=int(op)))
         trees_lt_max_depth = eq_depth + lt_depth
     return (trees_of_max_depth, trees_lt_max_depth)
 
@@ -158,21 +158,42 @@ def generateAllTrees(lb, ub, ops, depth):
     eq_depth, lt_depth = _generateAllTrees(lb, ub, ops, depth)
     return eq_depth + lt_depth
 
+def _generateRandomFullTree(lb, ub, ops, depth):
+    if depth <= 0:
+        i = randint(lb, ub)
+        return PostfixTree(leaf=i)
+    else:
+        return PostfixTree(
+                left=_generateRandomFullTree(lb, ub, ops, depth-1),
+                right=_generateRandomFullTree(lb, ub, ops, depth-1),
+                op=int(op))
+
 _get_op = lambda x: int(x[randint(0,len(x)-1)])
-def _generateRandomTree(lb, ub, ops, num_nodes):
+_full_tree = lambda x: 2**(x+1)-1
+def _generateRandomTree(lb, ub, ops, num_nodes, max_depth=5):
     if num_nodes == 1:
         return PostfixTree(leaf=randint(lb, ub))
+    elif num_nodes == _full_tree(max_depth):
+        return _generateRandomFullTree(lb, ub, ops, depth=max_depth)
     else:
         left = randint(1, num_nodes-1)
+        right = num_nodes - left
+        max_subtree_nodes = _full_tree(max_depth-1)
+        if left > max_subtree_nodes:
+            left = max_subtree_nodes
+            right = num_nodes - left
+        if right > max_subtree_nodes:
+            right = _max_subtree_nodes
+            left = num_nodes - right
         return PostfixTree(
                 op = _get_op(ops),
                 left = _generateRandomTree(lb, ub, ops, left),
                 right = _generateRandomTree(lb, ub, ops, num_nodes-left))
 
 #this is a uniformly random generation of trees with at most n number of nodes
-def generateRandomTrees(lb, ub, ops, num_nodes, num_samples):
+def generateRandomTrees(lb, ub, ops, max_depth, num_samples):
     for i in range(0, num_samples):
-        yield _generateRandomTree(lb, ub, list(ops), randint(1, num_nodes))
+        yield _generateRandomTree(lb, ub, list(ops), randint(1, _full_tree(max_depth)), max_depth=5)
 
 def generateRandomTreesFixedNodes(lb, ub, ops, num_nodes, num_samples):
     for i in range(0, num_samples):

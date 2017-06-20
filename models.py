@@ -12,8 +12,9 @@ from keras.layers.recurrent import LSTM, SimpleRNN
 cmp_all = lambda models, optimizer='adam', loss='mean_squared_error', metrics=['accuracy'] : [ model.compile(optimizer=optimizer, loss=loss, metrics=metrics) for model in models ]
 
 def preliminary_seq2seq(input_shape, output_shape):
-    names = [ 'simple-seq2seq-2x30' ]
-    nnets = [ seq2seq(input_shape, output_shape, hidden_dims=30, depth=(1,1), dropout=0.5) ]
+    names = [ 'seq2seq-1x10' ]
+    nnets = [ 
+            seq2seq(input_shape, output_shape, hidden_dims=50, depth=(2,2), dropout=0.5) ]
     cmp_all(nnets)
     return list(zip(names, nnets))
 
@@ -33,7 +34,7 @@ def preliminaries(input_shape):
     return list(zip(names, nnets))
 
 def seq2seq(input_shape, output_shape, hidden_dims=[10], depth=(1,1), dropout=0.25):
-    model = Seq2Seq(input_dim=input_shape[1], hidden_dim=hidden_dims, output_length=output_shape[0], output_dim=output_shape[1], depth=depth, dropout=dropout)
+    model = Seq2Seq(input_dim=input_shape[1], hidden_dim=hidden_dims, output_length=output_shape[0], output_dim=output_shape[1], depth=depth, dropout=dropout, teacher_force=True)
     return model
 
 def lstm(input_shape, hidden_dims=[], dropout=0.25):
