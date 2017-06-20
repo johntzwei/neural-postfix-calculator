@@ -57,28 +57,3 @@ def f1(precision, recall):
         return 2 * (precision * recall) / (precision + recall)
     except:
         return None
-
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument('model_weights', help='the file for the weights of the trained keras model', type=str)
-    parser.add_argument('lb_bin', help='the pickled label_binarizer', type=str)
-    parser.add_argument('--test_ex', help='the tab separated files of testing examples', type=str)
-    args = parser.parse_args()
-
-    #get user input
-    print('enter expressions below')
-    expr = []
-    while True:
-        i = str(input())
-        if i == '':
-            break
-        expr.append(i)
-    
-    #load model
-    from models import seq2seq, cmp_all
-    model = seq2seq((None, 11), (22, 11), hidden_dims=30, depth=(1,1), dropout=0.5) 
-    model.load_weights(args.model_weights)
-    cmp_all([ model ])
-
-    lb_bin = pickle.load(open(args.lb_bin,'rb'))
-    end_char = '$'  #should probably argparse this
