@@ -6,24 +6,25 @@ ROOT=/home/jwei/neural-postfix-calculator
 NAME=`basename $0 | cut -d . -f 1`
 EXP_DIR=$ROOT/experiments/$NAME
 
-SERIES='preliminary_seq2seq'
+SERIES='depth_4_model'
 
-EPOCHS=30000
-BATCH_SIZE=1
+EPOCHS=20000
+BATCH_SIZE=128
 TRAIN_TREE_TYPE="generateAllTrees"
 TRAIN_P1=0
 TRAIN_P2=0
 TRAIN_P3=0
-TRAIN_P4=3
+TRAIN_P4=4
 TRAIN_P5=0
 
-TEST_PER=10         #percentage out of 100
+TEST_PER=10
+#percentage out of 100
 
 TEST_TREE_TYPE="generateRandomTrees"
 TEST_P1=0
 TEST_P2=0
 TEST_P3=0
-TEST_P4=4
+TEST_P4=0
 TEST_P5=0
 
 mkdir -p $EXP_DIR
@@ -51,22 +52,21 @@ fi
 if [ ! -f $test_ex ]; then
     echo "generating test data"
     python $ROOT/trees.py $TEST_TREE_TYPE --p1 $TEST_P1 --p2 $TEST_P2 --p3 $TEST_P3 --p4 $TEST_P4 --p5 $TEST_P5 --infix > $test_ex
-fi
 
-if [[ 0 -ne $TEST_PER ]] && [[ ! -f $test_ex ]]; then
+
     echo "spliting train file with the test file"
     num_ex=`wc -l $train_ex | cut -f 1 -d ' '`
     head -n $(( ($num_ex * $TEST_PER) / 100 )) $train_ex > $test_ex
     tail -n +$(( ($num_ex * $TEST_PER) / 100 )) $train_ex > ${train_ex}.split
     mv ${train_ex}.split ${train_ex}
+
+    echo "deleting duplicate lines in test data"
+    sort -u $test_ex | uniq $test_ex > ${test_ex}.dedup
+    mv ${test_ex}.dedup $test_ex
+
+    echo "removing all lines in the test data from the training data"
+    awk '{if (f==1) { r[$0] } else if (! ($0 in r)) { print $0 } } ' f=1 $test_ex f=2 $train_ex > ${train_ex}.dedup
+    mv ${train_ex}.dedup $train_ex
 fi
-
-echo "deleting duplicate lines in test data"
-sort -u $test_ex | uniq $test_ex > ${test_ex}.dedup
-mv ${test_ex}.dedup $test_ex
-
-echo "removing all lines in the test data from the training data"
-awk '{if (f==1) { r[$0] } else if (! ($0 in r)) { print $0 } } ' f=1 $test_ex f=2 $train_ex > ${train_ex}.dedup
-mv ${train_ex}.dedup $train_ex
 
 python $ROOT/main.py $train_ex $test_ex $SERIES $EXP_DIR --epochs $EPOCHS --batch_size $BATCH_SIZE

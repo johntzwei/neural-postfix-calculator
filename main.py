@@ -3,6 +3,7 @@ import csv
 import argparse
 import pickle
 import numpy as np
+import sys
 
 import models
 from test import evaluate, convert_vectors
@@ -56,7 +57,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     if not args.model:
-        (X_train, y_train), label_bin = decode_seq2seq_csv(args.training_ex, lb=label_bin) 
+        (X_train, y_train), label_bin = decode_seq2seq_csv(args.training_ex, max_len=100) 
         (X_test, y_test), _ = decode_seq2seq_csv(args.testing_ex, lb=label_bin, max_len=X_train.shape[1])
         pickle.dump(label_bin, open(os.path.join(args.exp_dir, 'label_binarizer'), 'wb'))
 
@@ -72,17 +73,20 @@ if __name__ == '__main__':
 
         label_bin = pickle.load(open(os.path.join(args.exp_dir, 'label_binarizer'), 'rb'))
         if args.training_ex != 'None':
-            (X_train, y_train), label_bin = decode_seq2seq_csv(args.training_ex, lb=label_bin) 
+            (X_train, y_train), label_bin = decode_seq2seq_csv(args.training_ex, lb=label_bin, max_len=100) 
             (X_test, y_test), _ = decode_seq2seq_csv(args.testing_ex, lb=label_bin, max_len=X_train.shape[1])
         else:
             (X_test, y_test), _ = decode_seq2seq_csv(args.testing_ex, lb=label_bin, max_len=model.input_shape[1])
+
+    #early stopping when mse is at min
+    callbacks = [ models.acc_early_stopping ]
         
     #evaluate
     accuracies = []
     for name, model in keras_models:
         #train
         if args.training_ex != 'None':
-            history = model.fit(X_train, y_train, epochs=args.epochs)
+            history = model.fit([ X_train, y_train ], y_train, epochs=args.epochs, callbacks=callbacks)
             write_csv(args.exp_dir, 'losses_%s' % name, enumerate(history.history['loss'], 1))
 
         #save

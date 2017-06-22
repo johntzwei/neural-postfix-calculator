@@ -7,7 +7,7 @@ import numpy as np
 
 def evaluate(test_exprs, X_test, y_test, model, label_bin, las=False):
     #test
-    y_pred = model.predict(X_test)
+    y_pred = model.predict([ X_test, np.zeros(y_test.shape) ])
     y_seq_pred = convert_vectors(y_pred, label_bin.classes_)
 
     n_total = 0
